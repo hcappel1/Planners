@@ -37,7 +37,7 @@ class XYPlanner:
 	def GetNeighbors(self,current):
 		x_val = current.x
 		y_val = current.y
-		df = 0.5
+		df = 1
 		max_radius = 1
 		neighbor_list = []
 
@@ -73,20 +73,24 @@ class XYPlanner:
 		#print(ycoords)
 
 	def CompareClosedSet(self,ns_node,ClosedSet):
-		if ns_node in ClosedSet:
-			return 'true'
-		else:
-			return 'false'
+		for cs_node in ClosedSet:
+			if abs(ns_node.x-cs_node.x) < 1e-5 and abs(ns_node.y-cs_node.y) < 1e-5:
+				return 'true'
+
 
 	def CompareExploredSet(self,ns_node,ExploredSet):
-		if ns_node in ExploredSet:
-			return 'true'
-		else:
-			return 'false'
+		for es_node in ExploredSet:
+			if abs(ns_node.x-es_node.x) < 1e-5 and abs(ns_node.y-es_node.y) < 1e-5:
+				return es_node
 
 
+	def RemoveFromExploredSet(self,current_node,ExploredSet):
+		for es_node in ExploredSet:
+			if abs(current_node.x-es_node.x) < 1e-5 and abs(current_node.y-es_node.y) < 1e-5:
+				ExploredSet.remove(es_node)
+			
 
-print('hello world')
+
 
 
 def DoAstar():
@@ -99,8 +103,8 @@ def DoAstar():
 	test_node1 = XYNode()
 	test_node2 = XYNode()
 	planner = XYPlanner()
-	begin_node = planner.NodeInitialize(begin_node,3,4)
-	goal_node = planner.NodeInitialize(goal_node,5,6)
+	begin_node = planner.NodeInitialize(begin_node,1,1)
+	goal_node = planner.NodeInitialize(goal_node,35,52)
 	test_node1 = planner.NodeInitialize(test_node1,3.5,4.5)
 	test_node2 = planner.NodeInitialize(test_node2,3.5,4)
 	test_node1.g_score = 100
@@ -116,28 +120,19 @@ def DoAstar():
 	ExploredSet.append(test_node1)
 	ExploredSet.append(test_node2)
 
-	#ClosedSet.append(test_node1)
-	#ClosedSet.append(test_node2)
+	ClosedSet.append(begin_node)
+	ClosedSet.append(test_node1)
+	ClosedSet.append(test_node2)
 
 
 
+	while(OpenSet):
 
-
-	b = 0
-
-	while(b<3):
 		OpenSet.sort(key=lambda xy: xy.f_score)
 		current_node = OpenSet[0]
 
-		print('contents of open set after sort: ')
-		for oo in OpenSet:
-			print('key: %s, parent: %s' %(oo.key,oo.parent))
-
-		# print('current node: %s' %(current_node.key))
-		# print('size of open set: %f' % (len(OpenSet)))
-		# print('contents of sorted open set: ')
-		# for mm in OpenSet:
-		# 	print('key: %s gscore: %f fscore: %f' %(mm.key,mm.g_score,mm.f_score))
+		#print('size of open set: %f' %(len(OpenSet)))
+		print('current node: %s' %(current_node.key))
 
 
 		if planner.goalReached(current_node,goal_node) == 'true':
@@ -148,54 +143,35 @@ def DoAstar():
 			OpenSet.pop(0)
 
 			ClosedSet.append(current_node)
-			ExploredSet.remove(current_node)
+			planner.RemoveFromExploredSet(current_node,ExploredSet)
 
 			neighbor_nodes = planner.GetNeighbors(current_node)
-			#planner.PlotNeighbors(neighbor_nodes)
 
 			for ns_node in neighbor_nodes:
-				if planner.CompareClosedSet(ns_node,ClosedSet) == 'false'
-						for es_ind,es_node in enumerate(ExploredSet):
+				if planner.CompareClosedSet(ns_node,ClosedSet) != 'true':
+					#print('in closed set? %s' %(planner.CompareClosedSet(ns_node,ClosedSet)))
+					es_node = planner.CompareExploredSet(ns_node,ExploredSet)
+					#print('es_node: key %s,g_score %f,f_score %f' %(es_node.key,es_node.g_score,es_node.f_score))
+					if es_node:
 
-							if abs(es_node.x - ns_node.x) < 1e-5 and abs(es_node.y - ns_node.y) < 1e-5:
+						tentative_gscore = current_node.g_score + planner.g_score(current_node,ns_node)
 
-								print('Node already explored :D with key: %s' % (ns_node.key))
+						if tentative_gscore < es_node.g_score:
 
-								tentative_gscore = current_node.g_score + planner.g_score(current_node,ns_node)
-
-								if tentative_gscore < es_node.g_score:
-
-									print('update step')
-									es_node.parent = current_node.key
-									es_node.g_score = tentative_gscore
-									es_node.f_score = tentative_gscore + planner.heuristic_cost(ns_node,goal_node)
+							es_node.parent = current_node.key
+							es_node.g_score = tentative_gscore
+							es_node.f_score = tentative_gscore + planner.heuristic_cost(ns_node,goal_node)
 									
-
-							else:
-								print('adding new node to open set')
-								#print('not in explored set')
-								ns_node.g_score = current_node.g_score + planner.g_score(current_node,ns_node)
-								ns_node.f_score = ns_node.g_score + planner.heuristic_cost(ns_node,goal_node)
-								#OpenSet.append(ns_node)
-								#ExploredSet.append(ns_node)
-
-	# 						ExploredSet.append(ns_node)
-	# 			print('complete iteration %i' % (index))
-	# 			index = index + 1
-	# 			b = b + 1
-		#print('Open set size: %f' %(len(OpenSet)))				#print('new node with g score: %f and f score: %f' %(ns_node.g_score,ns_node.f_score))
-		b = b+1
-
-
-
-
-
-
-	
+					else:
+						ns_node.g_score = current_node.g_score + planner.g_score(current_node,ns_node)
+						ns_node.f_score = ns_node.g_score + planner.heuristic_cost(ns_node,goal_node)
+						OpenSet.append(ns_node)
+						ExploredSet.append(ns_node)
 
 
 
 DoAstar()
+
 
 
 

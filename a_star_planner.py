@@ -37,8 +37,8 @@ class XYPlanner:
 	def GetNeighbors(self,current):
 		x_val = current.x
 		y_val = current.y
-		df = 1
-		max_radius = 1
+		df = 0.5
+		max_radius = 2
 		neighbor_list = []
 
 		for i in np.arange(current.x - max_radius,current.x + max_radius+df,df):
@@ -104,7 +104,7 @@ def DoAstar():
 	test_node2 = XYNode()
 	planner = XYPlanner()
 	begin_node = planner.NodeInitialize(begin_node,1,1)
-	goal_node = planner.NodeInitialize(goal_node,35,52)
+	goal_node = planner.NodeInitialize(goal_node,12.5,21)
 	test_node1 = planner.NodeInitialize(test_node1,3.5,4.5)
 	test_node2 = planner.NodeInitialize(test_node2,3.5,4)
 	test_node1.g_score = 100
@@ -131,7 +131,6 @@ def DoAstar():
 		OpenSet.sort(key=lambda xy: xy.f_score)
 		current_node = OpenSet[0]
 
-		#print('size of open set: %f' %(len(OpenSet)))
 		print('current node: %s' %(current_node.key))
 
 
@@ -149,9 +148,7 @@ def DoAstar():
 
 			for ns_node in neighbor_nodes:
 				if planner.CompareClosedSet(ns_node,ClosedSet) != 'true':
-					#print('in closed set? %s' %(planner.CompareClosedSet(ns_node,ClosedSet)))
 					es_node = planner.CompareExploredSet(ns_node,ExploredSet)
-					#print('es_node: key %s,g_score %f,f_score %f' %(es_node.key,es_node.g_score,es_node.f_score))
 					if es_node:
 
 						tentative_gscore = current_node.g_score + planner.g_score(current_node,ns_node)
